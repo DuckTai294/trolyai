@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
@@ -19,7 +18,6 @@ export const MathText: React.FC<MathTextProps> = ({ content, className, isInline
   const [debouncedContent, setDebouncedContent] = useState(content);
 
   useEffect(() => {
-    // Basic debounce to avoid flashing during rapid typing simulation
     const handler = setTimeout(() => {
         setDebouncedContent(content);
     }, 50);
@@ -27,21 +25,21 @@ export const MathText: React.FC<MathTextProps> = ({ content, className, isInline
   }, [content]);
 
   useEffect(() => {
-    // Ensure MathJax is loaded and available before trying to typeset
-    if (typeof window !== 'undefined' && window.MathJax) {
-      // Use requestAnimationFrame to ensure the DOM is ready
-      const rAF = requestAnimationFrame(() => {
-          if (ref.current && window.MathJax.typesetPromise) {
-             window.MathJax.typesetPromise([ref.current])
-                 .catch((err: any) => console.debug('MathJax typesetting failed:', err));
-          }
-      });
-      return () => cancelAnimationFrame(rAF);
+    // Check if MathJax is fully initialized
+    if (window.MathJax && window.MathJax.typesetPromise && ref.current) {
+      const timer = setTimeout(() => {
+        if (ref.current) {
+          window.MathJax.typesetPromise([ref.current]).catch((err: any) => {
+            console.debug('MathJax error ignored during typing:', err);
+          });
+        }
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [debouncedContent]);
 
   return (
-    <div ref={ref} className={`${className || ''} ${isInline ? 'inline-block' : ''}`}>
+    <div ref={ref} className={`${className || ''} ${isInline ? 'inline-block' : 'w-full'}`}>
       <ReactMarkdown
         components={isInline ? {
           p: ({node, ...props}) => <span {...props} />

@@ -1,10 +1,8 @@
-
 import React, { useRef, useState } from 'react';
 
-export const TiltCard: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className }) => {
+export const TiltCard: React.FC<{ children: React.ReactNode, className?: string, onClick?: () => void }> = ({ children, className, onClick }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [transform, setTransform] = useState('perspective(1000px) rotateX(0deg) rotateY(0deg)');
-  const [bgPos, setBgPos] = useState('50% 50%');
+  const [style, setStyle] = useState({ transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg)', shine: { left: 0, top: 0, opacity: 0 } });
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return;
@@ -12,17 +10,18 @@ export const TiltCard: React.FC<{ children: React.ReactNode, className?: string 
     const x = (e.clientX - left) / width - 0.5;
     const y = (e.clientY - top) / height - 0.5;
 
-    // Rotate range: -10deg to 10deg
-    const rotateY = x * 10; 
-    const rotateX = -y * 10;
-
-    setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`);
-    setBgPos(`${50 + x * 20}% ${50 + y * 20}%`);
+    setStyle({
+      transform: `perspective(1000px) rotateX(${-y * 10}deg) rotateY(${x * 10}deg) scale3d(1.02, 1.02, 1.02)`,
+      shine: {
+        left: e.clientX - left,
+        top: e.clientY - top,
+        opacity: 0.4
+      }
+    });
   };
 
   const handleMouseLeave = () => {
-    setTransform('perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)');
-    setBgPos('50% 50%');
+    setStyle({ transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)', shine: { ...style.shine, opacity: 0 } });
   };
 
   return (
@@ -30,14 +29,20 @@ export const TiltCard: React.FC<{ children: React.ReactNode, className?: string 
       ref={ref}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`transition-transform duration-200 ease-out transform-style-3d ${className || ''}`}
-      style={{ transform }}
+      onClick={onClick}
+      className={`relative transition-transform duration-200 ease-out transform-style-3d overflow-hidden ${className || ''}`}
+      style={{ transform: style.transform }}
     >
+      {/* Dynamic Shine Effect */}
       <div 
-        className="absolute inset-0 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500"
+        className="absolute pointer-events-none rounded-full blur-[60px] mix-blend-soft-light transition-opacity duration-500"
         style={{ 
-          background: `radial-gradient(circle at ${bgPos}, rgba(255,255,255,0.8), transparent 60%)`,
-          mixBlendMode: 'overlay'
+          width: '150px', 
+          height: '150px', 
+          background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%)',
+          left: style.shine.left - 75,
+          top: style.shine.top - 75,
+          opacity: style.shine.opacity
         }}
       ></div>
       <div className="relative z-10">
